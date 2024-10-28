@@ -129,6 +129,19 @@ func (c *BTCClient) GetBlockTimestampByHeight(height uint64) (uint64, error) {
 	return uint64(blockHeader.Timestamp.Unix()), nil
 }
 
+func (c *BTCClient) GetBlock(hash *chainhash.Hash) (*wire.MsgBlock, error) {
+	callForBlockBody := func() (*wire.MsgBlock, error) {
+		return c.client.GetBlock(hash)
+	}
+
+	block, err := clientCallWithRetry(callForBlockBody, c.logger, c.cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get block body by hash %s: %w", hash.String(), err)
+	}
+
+	return block, nil
+}
+
 func clientCallWithRetry[T any](
 	call retry.RetryableFuncWithData[*T], logger *zap.Logger, cfg *BTCConfig,
 ) (*T, error) {
